@@ -2,4 +2,5 @@
  :deps  {io.github.rads/deps-info-infer {:local/root "infer"}
          io.github.rads/deps-info-summary {:local/root "summary"}}
  :aliases 
-  {:neil {:project {:name rads/deps-info}}}}
+  {:neil {:project {:name rads/deps-info
+                    :version "0.0.1"}}}}
