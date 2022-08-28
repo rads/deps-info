@@ -1,0 +1,1 @@
+{:bbin/bin {deps-info-infer {:main-opts ["-x" "rads.deps-info.infer/infer"]}}}
