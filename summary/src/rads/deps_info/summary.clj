@@ -1,10 +1,14 @@
 (ns rads.deps-info.summary
-  (:require [clojure.set :as set]))
+  (:require [clojure.set :as set]
+            [babashka.fs :as fs]))
 
 (def ^:private symbol-regex #"(?i)^(?:((?:[a-z0-9-]+\.)*[a-z0-9-]+)/)?([a-z0-9-]+)$")
 
 (defn- lib-str? [x]
   (boolean (and (string? x) (re-seq symbol-regex x))))
+
+(defn- local-script-path? [x]
+  (boolean (and (string? x) (fs/exists? x))))
 
 (defn- http-url? [x]
   (boolean (and (string? x) (re-seq #"^https?://" x))))
@@ -18,21 +22,29 @@
     :coords #{:mvn/version}
     :procurer :maven}
 
-   {:lib lib-str?
-    :coords #{:git/sha :git/url :git/tag}
-    :procurer :git}
+   {:lib local-script-path?
+    :coords #{:bbin/url}
+    :procurer :local}
 
    {:lib http-url?
     :coords #{:bbin/url}
     :procurer :http}
 
    {:lib lib-str?
-    :coords #{}
+    :coords #{:git/sha :git/url :git/tag}
     :procurer :git}
+
+   {:lib local-script-path?
+    :coords #{}
+    :procurer :local}
 
    {:lib http-url?
     :coords #{}
-    :procurer :http}])
+    :procurer :http}
+
+   {:lib lib-str?
+    :coords #{}
+    :procurer :git}])
 
 (defn- deps-type-match? [cli-opts deps-type]
   (and ((:lib deps-type) (:script/lib cli-opts))
