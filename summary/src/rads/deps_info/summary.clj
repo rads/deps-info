@@ -54,7 +54,7 @@
 
 (defn- match-deps-type [cli-opts]
   (or (some #(deps-type-match? cli-opts %) deps-types)
-      :unknown-procurer))
+      {:procurer :unknown-procurer}))
 
 (defn- match-artifact [cli-opts procurer]
   (cond
