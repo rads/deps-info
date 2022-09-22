@@ -54,7 +54,7 @@
 
 (defn- match-deps-type [cli-opts]
   (or (some #(deps-type-match? cli-opts %) deps-types)
-      (throw (ex-info "Invalid match" {:cli-opts cli-opts}))))
+      :unknown-procurer))
 
 (defn- match-artifact [cli-opts procurer]
   (cond
@@ -70,9 +70,12 @@
     :jar
 
     (or (#{:git} procurer)
-        (#{:local} procurer)
+        (and (#{:local} procurer) (or (fs/directory? (:script/lib cli-opts))
+                                      (fs/directory? (:local/root cli-opts))))
         (and (#{:http} procurer) (re-seq #"\.git$" (:script/lib cli-opts))))
-    :dir))
+    :dir
+
+    :else :unknown-artifact))
 
 (defn summary [cli-opts]
   (let [{:keys [procurer]} (match-deps-type cli-opts)
