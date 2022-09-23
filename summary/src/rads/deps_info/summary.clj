@@ -64,14 +64,15 @@
 
     (or (#{:maven} procurer)
         (and (#{:local} procurer)
-             (string? (:local/root cli-opts))
-             (re-seq #"\.jar$" (:local/root cli-opts)))
+             (or (and (:script/lib cli-opts) (re-seq #"\.jar$" (:script/lib cli-opts)))
+                 (and (:local/root cli-opts) (re-seq #"\.jar$" (:local/root cli-opts)))))
         (and (#{:http} procurer) (re-seq #"\.jar$" (:script/lib cli-opts))))
     :jar
 
     (or (#{:git} procurer)
-        (and (#{:local} procurer) (or (fs/directory? (:script/lib cli-opts))
-                                      (fs/directory? (:local/root cli-opts))))
+        (and (#{:local} procurer)
+             (or (and (:script/lib cli-opts) (fs/directory? (:script/lib cli-opts)))
+                 (and (:local/root cli-opts) (fs/directory? (:local/root cli-opts)))))
         (and (#{:http} procurer) (re-seq #"\.git$" (:script/lib cli-opts))))
     :dir
 
