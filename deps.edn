@@ -3,4 +3,4 @@
          io.github.rads/deps-info-summary {:local/root "summary"}}
  :aliases 
   {:neil {:project {:name rads/deps-info
-                    :version "0.0.5"}}}}
+                    :version "0.0.6"}}}}
