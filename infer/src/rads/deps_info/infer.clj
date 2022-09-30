@@ -80,12 +80,16 @@
            {:provided-opts (set (keys provided-lib-opts))
             :valid-combinations valid-lib-opts}))
 
+(def ^:private default-deps-info-client
+  {:http-get-json #(json/parse-string (:body @(apply http/get %&)) true)})
+
 (defn infer
   "Returns a tools.deps lib map for the given CLI opts."
-  [client cli-opts]
-  (let [lib-opts (cli-opts->lib-opts cli-opts)
-        lib-sym (edn/read-string (:lib cli-opts))
-        template-deps-fn (find-template-deps-fn lib-opts)]
-    (if-not template-deps-fn
-      (throw (invalid-lib-opts-error lib-opts))
-      (template-deps-fn client lib-sym lib-opts))))
+  ([cli-opts] (infer default-deps-info-client cli-opts))
+  ([client cli-opts]
+   (let [lib-opts (cli-opts->lib-opts cli-opts)
+         lib-sym (edn/read-string (:lib cli-opts))
+         template-deps-fn (find-template-deps-fn lib-opts)]
+     (if-not template-deps-fn
+       (throw (invalid-lib-opts-error lib-opts))
+       (template-deps-fn client lib-sym lib-opts)))))
