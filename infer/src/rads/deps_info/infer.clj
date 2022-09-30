@@ -26,36 +26,36 @@
   - Each key is a sequence of valid combinations of CLI opts.
   - Each value is a function which returns a tools.deps lib map."
   {[#{:local/root}]
-   (fn [lib-sym lib-opts]
+   (fn [_ lib-sym lib-opts]
      {lib-sym (select-keys lib-opts [:local/root])})
 
    [#{} #{:git/url}]
-   (fn [lib-sym lib-opts]
+   (fn [client lib-sym lib-opts]
      (let [url (or (:git/url lib-opts) (github-repo-http-url lib-sym))
-           {:keys [name commit]} (git/latest-github-tag (git-url->lib-sym url))]
+           {:keys [name commit]} (git/latest-github-tag client (git-url->lib-sym url))]
        {lib-sym {:git/url url :git/tag name :git/sha (:sha commit)}}))
 
    [#{:git/tag} #{:git/url :git/tag}]
-   (fn [lib-sym lib-opts]
+   (fn [client lib-sym lib-opts]
      (let [url (or (:git/url lib-opts) (github-repo-http-url lib-sym))
            tag (:git/tag lib-opts)
-           {:keys [commit]} (git/find-github-tag (git-url->lib-sym url) tag)]
+           {:keys [commit]} (git/find-github-tag client (git-url->lib-sym url) tag)]
        {lib-sym {:git/url url :git/tag tag :git/sha (:sha commit)}}))
 
    [#{:git/sha} #{:git/url :git/sha}]
-   (fn [lib-sym lib-opts]
+   (fn [_ lib-sym lib-opts]
      (let [url (or (:git/url lib-opts) (github-repo-http-url lib-sym))
            sha (:git/sha lib-opts)]
        {lib-sym {:git/url url :git/sha sha}}))
 
    [#{:latest-sha} #{:git/url :latest-sha}]
-   (fn [lib-sym lib-opts]
+   (fn [client lib-sym lib-opts]
      (let [url (or (:git/url lib-opts) (github-repo-http-url lib-sym))
-           sha (git/latest-github-sha (git-url->lib-sym url))]
+           sha (git/latest-github-sha client (git-url->lib-sym url))]
        {lib-sym {:git/url url :git/sha sha}}))
 
    [#{:git/url :git/tag :git/sha}]
-   (fn [lib-sym lib-opts]
+   (fn [_ lib-sym lib-opts]
      {lib-sym (select-keys lib-opts [:git/url :git/tag :git/sha])})})
 
 (def valid-lib-opts
@@ -82,10 +82,10 @@
 
 (defn infer
   "Returns a tools.deps lib map for the given CLI opts."
-  [& {:as opts}]
-  (let [lib-opts (cli-opts->lib-opts opts)
-        lib-sym (edn/read-string (:lib opts))
+  [client cli-opts]
+  (let [lib-opts (cli-opts->lib-opts cli-opts)
+        lib-sym (edn/read-string (:lib cli-opts))
         template-deps-fn (find-template-deps-fn lib-opts)]
     (if-not template-deps-fn
       (throw (invalid-lib-opts-error lib-opts))
-      (template-deps-fn lib-sym lib-opts))))
+      (template-deps-fn client lib-sym lib-opts))))
