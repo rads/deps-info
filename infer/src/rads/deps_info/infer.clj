@@ -1,5 +1,6 @@
 (ns rads.deps-info.infer
   (:require [rads.deps-info.git :as git]
+            [cheshire.core :as json]
             [clojure.edn :as edn]
             [clojure.set :as set]))
 
