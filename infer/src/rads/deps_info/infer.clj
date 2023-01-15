@@ -5,22 +5,8 @@
             [clojure.edn :as edn]
             [clojure.set :as set]))
 
-(defn- github-repo-http-url [lib]
-  (str "https://github.com/" (git/clean-github-lib lib)))
-
-(def github-repo-ssh-regex #"^git@github.com:([^/]+)/([^\.]+)\.git$")
-(def github-repo-http-regex #"^https://github.com/([^/]+)/([^\.]+)(\.git)?$")
-
-(defn- parse-git-url [git-url]
-  (let [[[_ gh-user repo-name]] (or (re-seq github-repo-ssh-regex git-url)
-                                    (re-seq github-repo-http-regex git-url))]
-    (if (and gh-user repo-name)
-      {:gh-user gh-user :repo-name repo-name}
-      (throw (ex-info "Failed to parse :git/url" {:git/url git-url})))))
-
-(defn- git-url->lib-sym [git-url]
-  (when-let [{:keys [gh-user repo-name]} (parse-git-url git-url)]
-    (symbol (str "io.github." gh-user) repo-name)))
+(defn- github-repo-ssh-url [lib]
+  (str "git@github.com:" (git/clean-github-lib lib) ".git"))
 
 (def lib-opts->template-deps-fn
   "A map to define valid CLI options.
@@ -33,27 +19,27 @@
 
    [#{} #{:git/url}]
    (fn [client lib-sym lib-opts]
-     (let [url (or (:git/url lib-opts) (github-repo-http-url lib-sym))
-           {:keys [name commit]} (git/latest-github-tag client (git-url->lib-sym url))]
+     (let [url (or (:git/url lib-opts) (github-repo-ssh-url lib-sym))
+           {:keys [name commit]} (git/latest-git-tag client url)]
        {lib-sym {:git/url url :git/tag name :git/sha (:sha commit)}}))
 
    [#{:git/tag} #{:git/url :git/tag}]
    (fn [client lib-sym lib-opts]
-     (let [url (or (:git/url lib-opts) (github-repo-http-url lib-sym))
+     (let [url (or (:git/url lib-opts) (github-repo-ssh-url lib-sym))
            tag (:git/tag lib-opts)
-           {:keys [commit]} (git/find-github-tag client (git-url->lib-sym url) tag)]
+           {:keys [commit]} (git/find-git-tag client url tag)]
        {lib-sym {:git/url url :git/tag tag :git/sha (:sha commit)}}))
 
    [#{:git/sha} #{:git/url :git/sha}]
    (fn [_ lib-sym lib-opts]
-     (let [url (or (:git/url lib-opts) (github-repo-http-url lib-sym))
+     (let [url (or (:git/url lib-opts) (github-repo-ssh-url lib-sym))
            sha (:git/sha lib-opts)]
        {lib-sym {:git/url url :git/sha sha}}))
 
    [#{:latest-sha} #{:git/url :latest-sha}]
    (fn [client lib-sym lib-opts]
-     (let [url (or (:git/url lib-opts) (github-repo-http-url lib-sym))
-           sha (git/latest-github-sha client (git-url->lib-sym url))]
+     (let [url (or (:git/url lib-opts) (github-repo-ssh-url lib-sym))
+           sha (git/latest-git-sha client url)]
        {lib-sym {:git/url url :git/sha sha}}))
 
    [#{:git/url :git/tag :git/sha}]

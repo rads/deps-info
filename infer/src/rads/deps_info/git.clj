@@ -1,13 +1,17 @@
 (ns rads.deps-info.git
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.edn :as edn]
+            [clojure.tools.gitlibs.impl :as gitlibs-impl]
+            [babashka.fs :as fs]
+            [babashka.process :refer [sh]]))
 
-(defn- http-get-json [client & args]
-  (apply (:http-get-json client) args))
-
-(defn default-branch [client lib]
-  (get (http-get-json client (format "https://api.github.com/repos/%s/%s"
-                                     (namespace lib) (name lib)))
-       :default_branch))
+(defn default-branch [_client git-url]
+  (let [lib-dir (gitlibs-impl/ensure-git-dir git-url)
+        remote-info (sh "git remote show origin" {:dir lib-dir})
+        [[_ branch]] (->> (:out remote-info)
+                          str/split-lines
+                          (some #(re-seq #"HEAD branch: (\w+)" %)))]
+    branch))
 
 (defn clean-github-lib [lib]
   (let [lib (str/replace lib "com.github." "")
@@ -15,23 +19,21 @@
         lib (symbol lib)]
     lib))
 
-(defn latest-github-sha [client lib]
-  (let [lib (clean-github-lib lib)
-        branch (default-branch client lib)]
-    (get (http-get-json client (format "https://api.github.com/repos/%s/%s/commits/%s"
-                                       (namespace lib) (name lib) branch))
-         :sha)))
+(defn latest-git-sha [client git-url]
+  (let [lib-dir (gitlibs-impl/ensure-git-dir git-url)
+        branch (default-branch client git-url)
+        log-result (sh ["git" "log" "-n" "1" branch "--pretty=format:\"%H\""]
+                       {:dir lib-dir})]
+    (edn/read-string (:out log-result))))
 
-(defn list-github-tags [client lib]
-  (let [lib (clean-github-lib lib)]
-    (http-get-json client (format "https://api.github.com/repos/%s/%s/tags"
-                                  (namespace lib) (name lib)))))
+(defn find-git-tag [_client git-url tag]
+  (let [lib-dir (gitlibs-impl/ensure-git-dir git-url)
+        tag-result (sh ["git" "rev-parse" tag] {:dir lib-dir})]
+    {:name (str tag)
+     :commit {:sha (str/trim (:out tag-result))}}))
 
-(defn latest-github-tag [client lib]
-  (-> (list-github-tags client lib)
-      first))
-
-(defn find-github-tag [client lib tag]
-  (->> (list-github-tags client lib)
-       (filter #(= (:name %) tag))
-       first))
+(defn latest-git-tag [client git-url]
+  (let [lib-dir (gitlibs-impl/ensure-git-dir git-url)
+        log-result (sh "git describe --tags --abbrev=0" {:dir lib-dir})
+        tag (edn/read-string (:out log-result))]
+    (find-git-tag client git-url tag)))
