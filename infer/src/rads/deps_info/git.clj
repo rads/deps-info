@@ -4,8 +4,11 @@
             [babashka.fs :as fs]
             [babashka.process :refer [sh]]))
 
-(defn- ensure-git-dir [client & args]
-  (apply (:ensure-git-dir client) args))
+(defn- ensure-git-dir [client git-url]
+  (binding [*err* (java.io.StringWriter.)]
+    (let [path ((:ensure-git-dir client) git-url)]
+      ((:git-fetch client) (fs/file path))
+      path)))
 
 (defn default-branch [client git-url]
   (let [lib-dir (ensure-git-dir client git-url)
@@ -25,9 +28,10 @@
 
 (defn find-git-tag [client git-url tag]
   (let [lib-dir (ensure-git-dir client git-url)
-        tag-result (sh ["git" "rev-parse" tag] {:dir lib-dir})]
+        tag-result (sh ["git" "log" "-n" "1" tag "--pretty=format:\"%H\""]
+                       {:dir lib-dir})]
     {:name (str tag)
-     :commit {:sha (str/trim (:out tag-result))}}))
+     :commit {:sha (edn/read-string (:out tag-result))}}))
 
 (defn latest-git-tag [client git-url]
   (let [lib-dir (ensure-git-dir client git-url)
@@ -35,11 +39,48 @@
         tag (edn/read-string (:out log-result))]
     (find-git-tag client git-url tag)))
 
-(defn- clean-github-lib [lib]
-  (let [lib (str/replace lib "com.github." "")
-        lib (str/replace lib "io.github." "")
-        lib (symbol lib)]
-    lib))
+(def providers
+  {#"^(com|io)\.github\." :github
+   #"^(com|io)\.gitlab\." :gitlab
+   #"^(org|io)\.bitbucket\." :bitbucket
+   #"^(com|io)\.beanstalkapp\." :beanstalk
+   #"^ht\.sr\." :sourcehut})
 
-(defn github-repo-ssh-url [lib]
-  (str "git@github.com:" (clean-github-lib lib) ".git"))
+(defn- clean-lib-str [lib]
+  (->> (reduce #(str/replace %1 %2 "") lib (keys providers))
+       symbol))
+
+(defn git-http-url [lib]
+  (let [provider (some #(when (re-seq (key %) (str lib)) %) providers)
+        s (clean-lib-str (str lib))]
+    (case (val provider)
+      :github (str "https://github.com/" s ".git")
+      :gitlab (str "https://gitlab.com/" s ".git")
+      :bitbucket (let [[u] (str/split (str s) #"/")]
+                   (str "https://" u "@bitbucket.org/" s ".git"))
+      :beanstalk (let [[u] (str/split (str s) #"/")]
+                   (str "https://" u ".git.beanstalkapp.com/" (name lib) ".git"))
+      :sourcehut (str "https://git.sr.ht/~" s))))
+
+(defn git-ssh-url [lib]
+  (let [provider (some #(when (re-seq (key %) (str lib)) %) providers)
+        s (clean-lib-str (str lib))]
+    (case (val provider)
+      :github (str "git@github.com:" s ".git")
+      :gitlab (str "git@gitlab.com:" s ".git")
+      :bitbucket (str "git@bitbucket.org:" s ".git")
+      :beanstalk (let [[u] (str/split (str s) #"/")]
+                   (str "git@" u ".git.beanstalkapp.com:/" s ".git"))
+      :sourcehut (str "git@git.sr.ht:~" s))))
+
+(defn git-repo-url [client lib]
+  (try
+    (let [url (git-http-url lib)]
+      (ensure-git-dir client url)
+      url)
+    (catch Exception e
+      (if (re-seq #"^Unable to clone " (ex-message e))
+        (let [url (git-ssh-url lib)]
+          (ensure-git-dir client url)
+          url)
+        (throw e)))))

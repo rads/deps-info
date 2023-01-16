@@ -16,26 +16,26 @@
 
    [#{} #{:git/url}]
    (fn [client lib-sym lib-opts]
-     (let [url (or (:git/url lib-opts) (git/github-repo-ssh-url lib-sym))
+     (let [url (or (:git/url lib-opts) (git/git-repo-url client lib-sym))
            {:keys [name commit]} (git/latest-git-tag client url)]
        {lib-sym {:git/url url :git/tag name :git/sha (:sha commit)}}))
 
    [#{:git/tag} #{:git/url :git/tag}]
    (fn [client lib-sym lib-opts]
-     (let [url (or (:git/url lib-opts) (git/github-repo-ssh-url lib-sym))
+     (let [url (or (:git/url lib-opts) (git/git-repo-url client lib-sym))
            tag (:git/tag lib-opts)
            {:keys [commit]} (git/find-git-tag client url tag)]
        {lib-sym {:git/url url :git/tag tag :git/sha (:sha commit)}}))
 
    [#{:git/sha} #{:git/url :git/sha}]
-   (fn [_ lib-sym lib-opts]
-     (let [url (or (:git/url lib-opts) (git/github-repo-ssh-url lib-sym))
+   (fn [client lib-sym lib-opts]
+     (let [url (or (:git/url lib-opts) (git/git-repo-url client lib-sym))
            sha (:git/sha lib-opts)]
        {lib-sym {:git/url url :git/sha sha}}))
 
    [#{:latest-sha} #{:git/url :latest-sha}]
    (fn [client lib-sym lib-opts]
-     (let [url (or (:git/url lib-opts) (git/github-repo-ssh-url lib-sym))
+     (let [url (or (:git/url lib-opts) (git/git-repo-url client lib-sym))
            sha (git/latest-git-sha client url)]
        {lib-sym {:git/url url :git/sha sha}}))
 
@@ -66,7 +66,8 @@
             :valid-combinations valid-lib-opts}))
 
 (def ^:private default-deps-info-client
-  {:ensure-git-dir gitlibs-impl/ensure-git-dir})
+  {:ensure-git-dir gitlibs-impl/ensure-git-dir
+   :git-fetch gitlibs-impl/git-fetch})
 
 (defn infer
   "Returns a tools.deps lib map for the given CLI opts."
