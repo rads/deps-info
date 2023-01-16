@@ -71,9 +71,10 @@
 
 (defn infer
   "Returns a tools.deps lib map for the given CLI opts."
-  ([cli-opts] (infer default-deps-info-client cli-opts))
+  ([cli-opts] (infer nil cli-opts))
   ([client cli-opts]
-   (let [lib-opts (cli-opts->lib-opts cli-opts)
+   (let [client (merge default-deps-info-client client)
+         lib-opts (cli-opts->lib-opts cli-opts)
          lib-sym (edn/read-string (:lib cli-opts))
          template-deps-fn (find-template-deps-fn lib-opts)]
      (if-not template-deps-fn
