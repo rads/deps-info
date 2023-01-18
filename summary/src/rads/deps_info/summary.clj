@@ -13,6 +13,15 @@
 (defn- http-url? [x]
   (boolean (and (string? x) (re-seq #"^https?://" x))))
 
+(defn- git-ssh-url? [x]
+  (boolean (and (string? x) (re-seq #"^.+@.+:.+\.git$" x))))
+
+(defn- git-http-url? [x]
+  (boolean (and (string? x) (re-seq #"^https?://.+\.git$" x))))
+
+(defn git-repo-url? [s]
+  (or (git-http-url? s) (git-ssh-url? s)))
+
 (def ^:private deps-types
   [{:lib lib-str?
     :coords #{:local/root}
@@ -26,6 +35,10 @@
     :coords #{:bbin/url}
     :procurer :local}
 
+   {:lib #(or (git-http-url? %) (git-ssh-url? %))
+    :coords #{:bbin/url}
+    :procurer :git}
+
    {:lib http-url?
     :coords #{:bbin/url}
     :procurer :http}
@@ -38,13 +51,14 @@
     :coords #{}
     :procurer :local}
 
+   {:lib #(or (git-http-url? %) (git-ssh-url? %) (lib-str? %))
+    :coords #{}
+    :procurer :git}
+
    {:lib http-url?
     :coords #{}
-    :procurer :http}
+    :procurer :http}])
 
-   {:lib lib-str?
-    :coords #{}
-    :procurer :git}])
 
 (defn- deps-type-match? [cli-opts deps-type]
   (and ((:lib deps-type) (:script/lib cli-opts))
