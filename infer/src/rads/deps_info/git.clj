@@ -35,8 +35,8 @@
 
 (defn latest-git-tag [client git-url]
   (let [lib-dir (ensure-git-dir client git-url)
-        log-result (sh "git describe --tags --abbrev=0" {:dir lib-dir})
-        tag (edn/read-string (:out log-result))]
+        describe-result (sh "git describe --tags --abbrev=0" {:dir lib-dir})
+        tag (str/trim-newline (:out describe-result))]
     (find-git-tag client git-url tag)))
 
 (def providers
