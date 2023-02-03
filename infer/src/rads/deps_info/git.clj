@@ -1,6 +1,5 @@
 (ns rads.deps-info.git
   (:require [clojure.string :as str]
-            [clojure.edn :as edn]
             [babashka.fs :as fs]
             [babashka.process :refer [sh]]))
 
@@ -22,16 +21,17 @@
 (defn latest-git-sha [client git-url]
   (let [lib-dir (ensure-git-dir client git-url)
         branch (default-branch client git-url)
-        log-result (sh ["git" "log" "-n" "1" branch "--pretty=format:\"%H\""]
+        log-result (sh ["git" "log" "-n" "1" branch "--pretty=format:%H"]
                        {:dir lib-dir})]
-    (edn/read-string (:out log-result))))
+    (str/trim-newline (:out log-result))))
 
 (defn find-git-tag [client git-url tag]
   (let [lib-dir (ensure-git-dir client git-url)
-        tag-result (sh ["git" "log" "-n" "1" tag "--pretty=format:\"%H\""]
-                       {:dir lib-dir})]
+        log-result (sh ["git" "log" "-n" "1" tag "--pretty=format:%H"]
+                       {:dir lib-dir})
+        sha (str/trim-newline (:out log-result))]
     {:name (str tag)
-     :commit {:sha (edn/read-string (:out tag-result))}}))
+     :commit {:sha sha}}))
 
 (defn latest-git-tag [client git-url]
   (let [lib-dir (ensure-git-dir client git-url)
