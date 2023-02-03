@@ -26,7 +26,7 @@ $ deps-info-infer --lib io.github.rads/deps-info --latest-sha
 This namespace can be be added to a `deps.edn` project as a standalone dependency using `:deps/root`:
 
 ```
-{:deps {io.gihtub.rads/deps-info {:git/tag "..." :git/sha "..."
+{:deps {io.github.rads/deps-info {:git/tag "..." :git/sha "..."
                                   :deps/root "infer"}}}
 ```
 
