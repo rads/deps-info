@@ -2,7 +2,12 @@
   (:require [clojure.set :as set]
             [babashka.fs :as fs]))
 
-(def ^:private symbol-regex #"(?i)^(?:((?:[a-z0-9-]+\.)*[a-z0-9-]+)/)?([a-z0-9-]+)$")
+(def ^:private symbol-regex
+  (re-pattern
+    (str "(?i)^"
+         "(?:((?:[a-z0-9-]+\\.)*[a-z0-9-]+)/)?"
+         "((?:[a-z0-9-]+\\.)*[a-z0-9-]+)"
+         "$")))
 
 (defn- lib-str? [x]
   (boolean (and (string? x) (re-seq symbol-regex x))))
