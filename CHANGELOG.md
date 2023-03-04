@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.1.1
+
+- [Add support for periods in symbol name](https://github.com/rads/deps-info/commit/420ec64180652d302583688a6daf1923437e9bf1)
+
 ## 0.1.0
 
 - First minor release
