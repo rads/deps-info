@@ -37,7 +37,8 @@
   (let [lib-dir (ensure-git-dir client git-url)
         describe-result (sh "git describe --tags --abbrev=0" {:dir lib-dir})
         tag (str/trim-newline (:out describe-result))]
-    (find-git-tag client git-url tag)))
+    (when-not (str/blank? tag)
+      (find-git-tag client git-url tag))))
 
 (def providers
   {#"^(com|io)\.github\." :github
