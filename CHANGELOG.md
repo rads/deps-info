@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.1.2
+
+- [infer: Use latest SHA when no tag is found](https://github.com/rads/deps-info/commit/6d323ba978502635c4cf2f8f1da4ff04f48240ca)
+
 ## 0.1.1
 
 - [Add support for periods in symbol name](https://github.com/rads/deps-info/commit/420ec64180652d302583688a6daf1923437e9bf1)
