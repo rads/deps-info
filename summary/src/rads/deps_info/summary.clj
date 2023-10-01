@@ -77,8 +77,8 @@
 
 (defn- match-artifact [cli-opts procurer]
   (cond
-    (or (and (#{:local} procurer) (re-seq #"\.clj$" (:script/lib cli-opts)))
-        (and (#{:http} procurer) (re-seq #"\.clj$" (:script/lib cli-opts))))
+    (or (and (#{:local} procurer) (re-seq #"\.(clj|bb)$" (:script/lib cli-opts)))
+        (and (#{:http} procurer) (re-seq #"\.(clj|bb)$" (:script/lib cli-opts))))
     :file
 
     (or (#{:maven} procurer)
