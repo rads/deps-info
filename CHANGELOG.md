@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.1.3
+
+- [summary: Support `.bb` as a file extension](https://github.com/rads/deps-info/commit/a1bc19e1eff2a3d962d2b7df828a0ce869d0018c)
+
 ## 0.1.2
 
 - [infer: Use latest SHA when no tag is found](https://github.com/rads/deps-info/commit/6d323ba978502635c4cf2f8f1da4ff04f48240ca)
